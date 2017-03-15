@@ -1,43 +1,17 @@
 ---
-- include: user.yml
-  when: solr_create_user
+- include: tasks/oah-install.yml
+  when: oah_command == "install"
 
-- name: Set solr_filename for Solr 4.x.
-  set_fact:
-    "solr_filename=solr-{{ solr_version }}"
-  when: "solr_version.split('.')[0] == '4'"
+- include: tasks/oah-update.yml
+  when: oah_command == "update"
 
-- name: Set solr_filename for Solr 3.x.
-  set_fact:
-    solr_filename: "apache-solr-{{ solr_version }}"
-  when: "solr_version.split('.')[0] == '3'"
+- include: tasks/oah-remove.yml
+  when: oah_command == "remove"
 
-- name: Download Solr.
-  get_url:
-    url: "{{ solr_mirror }}/lucene/solr/{{ solr_version }}/{{ solr_filename }}.tgz"
-    dest: "{{ solr_workspace }}/{{ solr_filename }}.tgz"
-    force: no
+- include: tasks/oah-reset.yml
+  when: oah_command == "reset"
 
-- name: Expand Solr.
-  command: >
-    tar -C {{ solr_workspace }} -xvzf {{ solr_workspace }}/{{ solr_filename }}.tgz
-    creates={{ solr_workspace }}/{{ solr_filename }}/dist/{{ solr_filename }}.war
+- include: tasks/oah-validate.yml
+  when: oah_command == "validate"
 
-- name: Check if Solr is already installed.
-  stat: "path={{ solr_install_path }}/dist/{{ solr_filename }}.war"
-  register: solr_war_file
-
-- name: Copy Solr into place.
-  command: "cp -r {{ solr_workspace }}/{{ solr_filename }} {{ solr_install_path }}"
-  when: not solr_war_file.stat.exists
-
-- name: Ensure Solr install files are owned by the solr_user.
-  file:
-    path: "{{ solr_install_path }}"
-    owner: "{{ solr_user }}"
-    group: "{{ solr_user }}"
-    recurse: yes
-  when: not solr_war_file.stat.exists
-
-- include: solr-home.yml
-- include: init-script.yml
+#- include: tasks/oah-{{ oah_command }}.yml
